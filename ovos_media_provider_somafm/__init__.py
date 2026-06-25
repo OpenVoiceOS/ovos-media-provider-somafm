@@ -18,8 +18,7 @@ from typing import ClassVar, List, Optional, Set
 
 from ovos_utils.log import LOG
 
-from mediavocab import MediaType, Release, Signals
-from mediavocab.taxonomy import PlaybackType
+from mediavocab import Release, Signals
 
 from ovos_plugin_manager.templates.media_provider import MediaProvider
 
@@ -30,27 +29,14 @@ from ovos_media_provider_somafm.version import __version__  # noqa: F401
 
 
 class SomaFMMediaProvider(MediaProvider):
-    """Search the SomaFM channel catalog and return playable radio releases.
-
-    Routing is fixed to radio audio: the OCP pipeline gates this provider out
-    of non-radio queries before paying for the (cached) station fetch.
-    """
+    """Search the SomaFM channel catalog and return playable radio releases."""
 
     name: ClassVar[str] = "somafm"
-    media: ClassVar[Set[MediaType]] = {MediaType.RADIO}
-    playback_type: ClassVar[Set[PlaybackType]] = {PlaybackType.AUDIO}
 
     def __init__(self, config: Optional[dict] = None):
         super().__init__(config)
         # max channels to return per search, overridable via plugin config
         self.max_results: int = int(self.config.get("max_results", 10))
-
-    def is_available(self) -> bool:
-        """radiosoma is a hard dependency and SomaFM needs no API key, so the
-        provider is available whenever its imports resolved (network
-        reachability is handled per-search by the pipeline's ``search_safe``
-        wrapper)."""
-        return True
 
     @staticmethod
     def _station_matches(station, title: str, genres: List[str]) -> bool:
@@ -75,7 +61,11 @@ class SomaFMMediaProvider(MediaProvider):
 
         return False
 
-    def search(self, signals: Signals, lang: str = "en-us") -> List[Release]:
+    def search(self, signals: Signals, lang: str = "en-us", *,
+               supported_playback_types: Optional[Set[str]] = None,
+               blocked_genres: Optional[Set[str]] = None,
+               region: Optional[str] = None,
+               session_id: Optional[str] = None) -> List[Release]:
         """Filter the SomaFM catalog by ``signals.title`` /
         ``signals.content_genres`` and return one :class:`Release` per stream
         encoding of each matching channel.

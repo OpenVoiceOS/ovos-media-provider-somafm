@@ -2,7 +2,6 @@
 from unittest.mock import patch
 
 from mediavocab import MediaType, Release, Signals, Work, StreamMode
-from mediavocab.taxonomy import PlaybackType
 
 from ovos_media_provider_somafm import SomaFMMediaProvider
 
@@ -27,19 +26,26 @@ def _make_release(title):
 def test_instantiation():
     prov = SomaFMMediaProvider()
     assert prov.name == "somafm"
-    assert prov.media == {MediaType.RADIO}
-    assert prov.playback_type == {PlaybackType.AUDIO}
-    assert prov.is_available() is True
 
 
-def test_matches_radio_true():
+def test_search_accepts_context_kwargs():
+    """The provider accepts the pipeline's request-context kwargs."""
     prov = SomaFMMediaProvider()
-    assert prov.matches(Signals(medium=MediaType.RADIO)) is True
-
-
-def test_matches_music_false():
-    prov = SomaFMMediaProvider()
-    assert prov.matches(Signals(medium=MediaType.MUSIC)) is False
+    stations = [_FakeStation("Groove Salad", genre="ambient")]
+    with patch("ovos_media_provider_somafm.get_stations",
+               return_value=iter(stations)), \
+            patch("ovos_media_provider_somafm.station_to_releases",
+                  side_effect=lambda s: [_make_release(s.title)]):
+        results = prov.search(
+            Signals(medium=MediaType.RADIO, title="groove salad"),
+            lang="en-us",
+            supported_playback_types={"audio"},
+            blocked_genres={"adult"},
+            region="US",
+            session_id="sess-1",
+        )
+    assert len(results) == 1
+    assert all(isinstance(r, Release) for r in results)
 
 
 def test_search_filters_by_title_and_returns_releases():
