@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.0.1a5](https://github.com/OpenVoiceOS/ovos-media-provider-somafm/tree/0.0.1a5) (2026-09-02)
+
+[Full Changelog](https://github.com/OpenVoiceOS/ovos-media-provider-somafm/compare/0.0.1a4...0.0.1a5)
+
+**Merged pull requests:**
+
+- fix: declare SERVED\_MEDIA and respect signals.medium contract [\#4](https://github.com/OpenVoiceOS/ovos-media-provider-somafm/pull/4) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.0.1a4](https://github.com/OpenVoiceOS/ovos-media-provider-somafm/tree/0.0.1a4) (2026-08-13)
+
+[Full Changelog](https://github.com/OpenVoiceOS/ovos-media-provider-somafm/compare/0.0.1a3...0.0.1a4)
+
 ## [0.0.1a3](https://github.com/OpenVoiceOS/ovos-media-provider-somafm/tree/0.0.1a3) (2026-08-02)
 
 [Full Changelog](https://github.com/OpenVoiceOS/ovos-media-provider-somafm/compare/0.0.1a2...0.0.1a3)
