@@ -18,7 +18,7 @@ from typing import ClassVar, List, Optional, Set
 
 from ovos_utils.log import LOG
 
-from mediavocab import Release, Signals
+from mediavocab import MediaType, Release, Signals
 
 from ovos_plugin_manager.templates.media_provider import MediaProvider
 
@@ -32,6 +32,11 @@ class SomaFMMediaProvider(MediaProvider):
     """Search the SomaFM channel catalog and return playable radio releases."""
 
     name: ClassVar[str] = "somafm"
+
+    # SomaFM is internet music radio: every Release it builds carries
+    # work.media_type == RADIO, and it legitimately answers plain MUSIC
+    # requests too (it *is* the music being played).
+    SERVED_MEDIA: ClassVar[Set[MediaType]] = {MediaType.RADIO, MediaType.MUSIC}
 
     def __init__(self, config: Optional[dict] = None):
         super().__init__(config)
@@ -72,7 +77,17 @@ class SomaFMMediaProvider(MediaProvider):
 
         SomaFM has no per-query search endpoint; the full station list is
         fetched (and cached by radiosoma's session) then filtered locally.
+
+        A query naming a concrete media type outside ``SERVED_MEDIA`` (e.g.
+        MOVIE, PODCAST) cannot be served by this provider and returns ``[]``
+        — a query with no type (GENERIC/unset) may still legitimately browse
+        the catalog.
         """
+        medium = signals.medium
+        if medium is not None and medium not in (MediaType.GENERIC,) \
+                and medium not in self.SERVED_MEDIA:
+            return []
+
         title = (signals.title or "").strip().lower()
         genres = [g for g in (signals.content_genres or []) if g]
 
