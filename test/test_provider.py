@@ -128,3 +128,41 @@ def test_search_swallows_network_errors():
     with patch("ovos_media_provider_somafm.get_stations",
                side_effect=RuntimeError("boom")):
         assert prov.search(Signals(medium=MediaType.RADIO, title="x")) == []
+
+
+def test_unsupported_typed_query_returns_nothing():
+    """A PODCAST/MOVIE-typed query is outside SERVED_MEDIA -> [] without
+    even hitting the network."""
+    prov = SomaFMMediaProvider()
+    stations = [_FakeStation("Groove Salad", genre="ambient")]
+    with patch("ovos_media_provider_somafm.get_stations",
+               return_value=iter(stations)) as gs, \
+            patch("ovos_media_provider_somafm.station_to_releases",
+                  side_effect=lambda s: [_make_release(s.title)]):
+        assert prov.search(Signals(medium=MediaType.PODCAST)) == []
+        assert prov.search(Signals(medium=MediaType.MOVIE, title="x")) == []
+    gs.assert_not_called()
+
+
+def test_music_typed_query_returns_results():
+    """SomaFM is music radio: a plain MUSIC request is served too."""
+    prov = SomaFMMediaProvider()
+    stations = [_FakeStation("Groove Salad", genre="ambient")]
+    with patch("ovos_media_provider_somafm.get_stations",
+               return_value=iter(stations)), \
+            patch("ovos_media_provider_somafm.station_to_releases",
+                  side_effect=lambda s: [_make_release(s.title)]):
+        results = prov.search(Signals(medium=MediaType.MUSIC))
+    assert results
+    assert results[0].work.title == "Groove Salad"
+
+
+def test_generic_medium_browses_catalog():
+    prov = SomaFMMediaProvider()
+    stations = [_FakeStation("A"), _FakeStation("B")]
+    with patch("ovos_media_provider_somafm.get_stations",
+               return_value=iter(stations)), \
+            patch("ovos_media_provider_somafm.station_to_releases",
+                  side_effect=lambda s: [_make_release(s.title)]):
+        results = prov.search(Signals(medium=MediaType.GENERIC))
+    assert {r.work.title for r in results} == {"A", "B"}
